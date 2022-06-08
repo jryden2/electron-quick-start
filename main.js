@@ -1,22 +1,51 @@
 // Modules to control application life and create native browser window
 const {app, BrowserWindow} = require('electron')
 const path = require('path')
+const { register, dock, unregister } = require('./electron-application-desktop-toolbar')
 
 function createWindow () {
   // Create the browser window.
-  const mainWindow = new BrowserWindow({
-    width: 800,
-    height: 600,
-    webPreferences: {
-      preload: path.join(__dirname, 'preload.js')
-    }
-  })
+    const mainWindow = new BrowserWindow({
+        width: 600,
+        height: 800,
+        //x: 3540,
+        //y: 0,
+        frame: true,
+        titleBarStyle: 'none',
+        alwaysOnTop: true,
+        type: 'toolbar',
+        backgroundColor: '#283243',
+        resizable: false,
+        webPreferences: {
+            preload: path.join(__dirname, 'preload.js')
+        }
+    })
+
+    mainWindow.setAlwaysOnTop(true, 'screen')
+    mainWindow.setVisibleOnAllWorkspaces(true);
+    mainWindow.setMenuBarVisibility(false)
+    mainWindow.setResizable(true)
+    mainWindow.setSkipTaskbar(false)
+
+    winhndle = mainWindow.getNativeWindowHandle();
 
   // and load the index.html of the app.
-  mainWindow.loadFile('index.html')
+    mainWindow.loadFile('index.html')
 
-  // Open the DevTools.
-  // mainWindow.webContents.openDevTools()
+    callbackfn = function (evt, info) {
+        setTimeout(function () {
+            mainWindow.setSize(info.width, info.height, false);
+            mainWindow.setPosition(info.left, info.top, false);
+            console.log("Docking: %s, {%d, %d, %d, %d}", info.side, info.left, info.top, info.width, info.height);
+        }, 1000);
+    }
+
+    register(winhndle, callbackfn);
+
+    dock(winhndle, true, -1920, 0, 0, 100);
+
+    // Open the DevTools.
+    // mainWindow.webContents.openDevTools()
 }
 
 // This method will be called when Electron has finished
@@ -36,6 +65,7 @@ app.whenReady().then(() => {
 // for applications and their menu bar to stay active until the user quits
 // explicitly with Cmd + Q.
 app.on('window-all-closed', function () {
+  unregister(winhndle)
   if (process.platform !== 'darwin') app.quit()
 })
 

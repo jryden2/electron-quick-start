@@ -2,6 +2,7 @@
 #include <napi.h>
 #include <iostream>
 #include <string>
+#include <sstream>
 
 #ifdef _WIN32
 
@@ -14,29 +15,30 @@ namespace addon
 {
 
 #ifdef _WIN32
-  extern int g_uSide = ABE_TOP;
+  extern int g_edge = ABE_TOP;
   extern bool g_fAppRegistered = false;
   
-  int g_offset = 0;
+  int g_left = 0;
+  int g_top = 0;
+  int g_right = 0;
+  int g_bottom = 0;
 
   Napi::Function emit;
   Napi::FunctionReference f;
 
   // AppBarQuerySetPos - sets the size and position of an appbar.
 
-  // uEdge - screen edge to which the appbar is to be anchored
   // lprc - current bounding rectangle of the appbar
   // pabd - address of the APPBARDATA structure with the hWnd and cbSize members
   // filled
-  void PASCAL AppBarQuerySetPos(HWND hwndAccessBar, UINT uEdge, LPRECT lprc, PAPPBARDATA pabd)
+  void PASCAL AppBarQuerySetPos(HWND hwndAccessBar, LPRECT lprc, PAPPBARDATA pabd)
   {
-
     int iHeight = 0;
     int iWidth = 0;
 
     Napi::Object obj = Napi::Object::New(f.Env());
 
-    switch (uEdge)
+    switch (g_edge)
     {
     case ABE_LEFT:
       obj.Set("side", "ABE_LEFT");
@@ -57,21 +59,17 @@ namespace addon
 
     pabd->hWnd = hwndAccessBar;
     pabd->rc = *lprc;
-    pabd->uEdge = uEdge;
+    pabd->uEdge = g_edge;
 
     // Copy the screen coordinates of the appbar's bounding
     // rectangle into the APPBARDATA structure.
-    if ((uEdge == ABE_LEFT) || (uEdge == ABE_RIGHT))
+    if ((g_edge == ABE_LEFT) || (g_edge == ABE_RIGHT))
     {
       iWidth = pabd->rc.right - pabd->rc.left;
-      pabd->rc.top = 0;
-      pabd->rc.bottom = GetSystemMetrics(SM_CYSCREEN);
     }
     else
     {
       iHeight = pabd->rc.bottom - pabd->rc.top;
-      pabd->rc.left = g_offset;
-      pabd->rc.right = 1;// GetSystemMetrics(SM_CXSCREEN);
     }
 
     // Query the system for an approved size and position.
@@ -79,7 +77,7 @@ namespace addon
 
     // Adjust the rectangle, depending on the edge to which the appbar is
     // anchored.
-    switch (uEdge)
+    switch (g_edge)
     {
     case ABE_LEFT:
       pabd->rc.right = pabd->rc.left + iWidth;
@@ -107,7 +105,6 @@ namespace addon
     Napi::Number top = Napi::Number::New(f.Env(), pabd->rc.top);
     Napi::Number width = Napi::Number::New(f.Env(), pabd->rc.right - pabd->rc.left);
     Napi::Number height = Napi::Number::New(f.Env(), pabd->rc.bottom - pabd->rc.top);
-    Napi::Number side = Napi::Number::New(f.Env(), uEdge);
 
     // Assign values to propertieselectron-application-desktop-toolbar
     obj.Set("left", left);
@@ -139,7 +136,7 @@ namespace addon
     iHeight = rcWindow.bottom - rcWindow.top;
     iWidth = rcWindow.right - rcWindow.left;
 
-    switch (g_uSide)
+    switch (g_edge)
     {
     case ABE_LEFT:
       rc.bottom = rc.top + iHeight;
@@ -158,7 +155,7 @@ namespace addon
       break;
     }
 
-    AppBarQuerySetPos(pabd->hWnd, g_uSide, &rc, pabd);
+    AppBarQuerySetPos(pabd->hWnd, &rc, pabd);
   }
 
   // AppBarCallback - processes notification messages sent by the system.
@@ -228,31 +225,20 @@ namespace addon
   // fRegister - register and unregister flag
 
   // Global variables
-  //     g_uSide - screen edge (defaults to ABE_LEFT)
-  //     g_fAppRegistered - flag indicating whether the bar is registered
+    //     g_fAppRegistered - flag indicating whether the bar is registered
   BOOL RegisterAccessBar(HWND hwndAccessBar, BOOL fRegister)
   {
-    APPBARDATA abd;
-
     // Specify the structure size and handle to the appbar.
+    APPBARDATA abd;
     abd.cbSize = sizeof(APPBARDATA);
     abd.hWnd = hwndAccessBar;
-
-    if (fRegister && g_fAppRegistered)
-    {
-      return true;
-    }
-
-    if (!fRegister && !g_fAppRegistered)
-    {
-      return true;
-    }
 
     if (!fRegister && g_fAppRegistered)
     {
       // Unregister the appbar.
       SHAppBarMessage(ABM_REMOVE, &abd);
       g_fAppRegistered = FALSE;
+      return true;
     }
 
     if (fRegister && !g_fAppRegistered)
@@ -265,53 +251,30 @@ namespace addon
       if (!SHAppBarMessage(ABM_NEW, &abd))
         return FALSE;
 
-      g_uSide = ABE_TOP; // default edge
+      g_edge = ABE_TOP; // default edge
       g_fAppRegistered = TRUE;
+
+      return true;
     }
+
+    return false;
   }
 
-  void DockAccessBar(HWND hwndAccessBar, UINT edge, UINT windowSize)
+  void DockAccessBar(HWND hwndAccessBar)
   {
-    APPBARDATA abd;
-    RECT lprc;
-
-    if (edge == ABE_LEFT)
-    {
-      lprc.top = 0;
-      lprc.bottom = 0;
-      lprc.left = 0;
-      lprc.right = windowSize;
-    }
-    else if(edge == ABE_RIGHT)
-    {
-      lprc.top = 0;
-      lprc.bottom = 0;
-      lprc.left = GetSystemMetrics(SM_CXSCREEN) - windowSize;
-      lprc.right = GetSystemMetrics(SM_CXSCREEN);
-    }
-    else if(edge == ABE_BOTTOM)
-    {
-      lprc.top = GetSystemMetrics(SM_CYSCREEN) - windowSize;
-      lprc.bottom = GetSystemMetrics(SM_CYSCREEN);
-      lprc.left = 0;
-      lprc.right = 0;
-    }
-    else // ABE_TOP
-    {
-      lprc.top = 0;
-      lprc.bottom = windowSize;
-      lprc.left = 0;
-      lprc.right = 0;
-    }
-
+    RECT rc;
+    rc.left = g_left;
+    rc.top = g_top;
+    rc.right = g_right;
+    rc.bottom = g_bottom;
+    
     // Specify the structure size and handle to the appbar.
+    APPBARDATA abd;
     abd.cbSize = sizeof(APPBARDATA);
     abd.hWnd = hwndAccessBar;
     abd.uCallbackMessage = APPBAR_CALLBACK;
 
-    AppBarQuerySetPos(hwndAccessBar, edge, &lprc, &abd);
-
-    return;
+    AppBarQuerySetPos(hwndAccessBar, &rc, &abd);
   }
 
   /* Public */
@@ -387,7 +350,7 @@ namespace addon
 
     Napi::Env env = info.Env();
 
-    if (info.Length() < 3)
+    if (info.Length() < 6)
     {
       Napi::TypeError::New(env, "Wrong number of arguments")
           .ThrowAsJavaScriptException();
@@ -406,41 +369,42 @@ namespace addon
       return env.Null();
     }
 
-    if (!info[2].IsNumber())
+    for (int i = 2; i < info.Length(); i++)
     {
-      Napi::TypeError::New(env, "Wrong arguments 2").ThrowAsJavaScriptException();
-      return env.Null();
-    }
-
-    if (!info[3].IsNumber())
-    {
-      Napi::TypeError::New(env, "Wrong arguments 2").ThrowAsJavaScriptException();
-      return env.Null();
+        if (!info[i].IsNumber())
+        {
+            std::stringstream ss;
+            ss << "Wrong arguments " << i;
+            Napi::TypeError::New(env, ss.str()).ThrowAsJavaScriptException();
+            return env.Null();
+        }
     }
 
     Napi::Buffer<void *> handleBufffer = info[0].As<Napi::Buffer<void *> >();
     Napi::Boolean side = info[1].As<Napi::Boolean>();
-    Napi::Number windowSize = info[2].As<Napi::Number>();
-	g_offset = info[3].As<Napi::Number>();
 
-    UINT edge = ABE_BOTTOM;
+	g_left = info[2].As<Napi::Number>();
+    g_top = info[3].As<Napi::Number>();
+    g_right = info[4].As<Napi::Number>();
+    g_bottom = info[5].As<Napi::Number>();
 
+    g_edge = ABE_BOTTOM;
     if (side)
     {
-      edge = ABE_TOP;
+      g_edge = ABE_TOP;
     }
 
     HWND handle =
         static_cast<HWND>(*reinterpret_cast<void **>(handleBufffer.Data()));
 
-    DockAccessBar(handle, edge, windowSize);
+    DockAccessBar(handle);
 
     /*
     f.Call({Napi::String::New(f.Env(), "data"),
             Napi::String::New(f.Env(), "Dock done")});
     */
 
-    Napi::Number res = Napi::Number::New(env, edge);
+    Napi::Number res = Napi::Number::New(env, g_edge);
 
     return res;
   }
