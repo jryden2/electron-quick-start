@@ -20,8 +20,8 @@ namespace addon
   
   int g_left = 0;
   int g_top = 0;
-  int g_right = 0;
-  int g_bottom = 0;
+  int g_width = 0;
+  int g_height = 0;
 
   Napi::Function emit;
   Napi::FunctionReference f;
@@ -33,9 +33,6 @@ namespace addon
   // filled
   void PASCAL AppBarQuerySetPos(HWND hwndAccessBar, LPRECT lprc, PAPPBARDATA pabd)
   {
-    int iHeight = 0;
-    int iWidth = 0;
-
     Napi::Object obj = Napi::Object::New(f.Env());
 
     switch (g_edge)
@@ -61,17 +58,6 @@ namespace addon
     pabd->rc = *lprc;
     pabd->uEdge = g_edge;
 
-    // Copy the screen coordinates of the appbar's bounding
-    // rectangle into the APPBARDATA structure.
-    if ((g_edge == ABE_LEFT) || (g_edge == ABE_RIGHT))
-    {
-      iWidth = pabd->rc.right - pabd->rc.left;
-    }
-    else
-    {
-      iHeight = pabd->rc.bottom - pabd->rc.top;
-    }
-
     // Query the system for an approved size and position.
     SHAppBarMessage(ABM_QUERYPOS, pabd);
 
@@ -80,19 +66,19 @@ namespace addon
     switch (g_edge)
     {
     case ABE_LEFT:
-      pabd->rc.right = pabd->rc.left + iWidth;
+      pabd->rc.right = pabd->rc.left + g_width;
       break;
 
     case ABE_RIGHT:
-      pabd->rc.left = pabd->rc.right - iWidth;
+      pabd->rc.left = pabd->rc.right - g_width;
       break;
 
     case ABE_TOP:
-      pabd->rc.bottom = pabd->rc.top + iHeight;
+      pabd->rc.bottom = pabd->rc.top + g_height;
       break;
 
     case ABE_BOTTOM:
-      pabd->rc.top = pabd->rc.bottom - iHeight;
+      pabd->rc.top = pabd->rc.bottom - g_height;
       break;
     }
 
@@ -265,8 +251,8 @@ namespace addon
     RECT rc;
     rc.left = g_left;
     rc.top = g_top;
-    rc.right = g_right;
-    rc.bottom = g_bottom;
+    rc.right = g_left + g_width;
+    rc.bottom = g_top + g_height;
     
     // Specify the structure size and handle to the appbar.
     APPBARDATA abd;
@@ -385,8 +371,8 @@ namespace addon
 
 	g_left = info[2].As<Napi::Number>();
     g_top = info[3].As<Napi::Number>();
-    g_right = info[4].As<Napi::Number>();
-    g_bottom = info[5].As<Napi::Number>();
+    g_width = info[4].As<Napi::Number>();
+    g_height = info[5].As<Napi::Number>();
 
     g_edge = ABE_BOTTOM;
     if (side)
