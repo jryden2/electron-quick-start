@@ -4,3 +4,11 @@
 // `nodeIntegration` is turned off. Use `preload.js` to
 // selectively enable features needed in the rendering
 // process.
+const electron = require('electron')
+
+const ipc = electron.ipcRenderer
+
+document.getElementById('close').addEventListener('click', _ => {
+    console.log('closing renderer')
+    ipc.send('closing')
+})

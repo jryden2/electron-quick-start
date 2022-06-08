@@ -1,30 +1,34 @@
 // Modules to control application life and create native browser window
-const {app, BrowserWindow} = require('electron')
+const electron = require('electron')
+const { app, BrowserWindow } = require('electron')
 const path = require('path')
 const { register, dock, unregister } = require('./electron-application-desktop-toolbar')
+const ipc = electron.ipcMain
 
 function createWindow () {
   // Create the browser window.
     const mainWindow = new BrowserWindow({
-        width: 600,
-        height: 800,
+        width: 800,
+        height: 600,
         //x: 3540,
         //y: 0,
-        frame: true,
+        frame: false,
         titleBarStyle: 'none',
         alwaysOnTop: true,
         type: 'toolbar',
         backgroundColor: '#283243',
         resizable: false,
         webPreferences: {
-            preload: path.join(__dirname, 'preload.js')
+            preload: path.join(__dirname, 'preload.js'),
+            nodeIntegration: true,
+            contextIsolation: false,
         }
     })
 
     mainWindow.setAlwaysOnTop(true, 'screen')
     mainWindow.setVisibleOnAllWorkspaces(true);
-    mainWindow.setMenuBarVisibility(false)
-    mainWindow.setResizable(true)
+    mainWindow.setMenuBarVisibility(true)
+    mainWindow.setResizable(false)
     mainWindow.setSkipTaskbar(false)
 
     winhndle = mainWindow.getNativeWindowHandle();
@@ -42,10 +46,17 @@ function createWindow () {
 
     register(winhndle, callbackfn);
 
-    dock(winhndle, true, -1920, 0, 0, 100);
+    // Parameters match the output (above)
+    // dock(handle, side, left, top, width, height)
+
+    // This example docks to my secondary screen which is to the left
+    dock(winhndle, true, -1920, 0, 1920, 100);
+
+    // This example docks to my primary screen
+    // dock(winhndle, true, 0, 0, 1920, 100);
 
     // Open the DevTools.
-    // mainWindow.webContents.openDevTools()
+     //mainWindow.webContents.openDevTools()
 }
 
 // This method will be called when Electron has finished
@@ -71,3 +82,8 @@ app.on('window-all-closed', function () {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
+ipc.on('closing', _ => {
+    console.log('closing')
+    unregister(winhndle)
+    app.quit()
+})

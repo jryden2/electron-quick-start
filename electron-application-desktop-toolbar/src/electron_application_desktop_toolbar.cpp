@@ -363,6 +363,7 @@ namespace addon
             ss << "Wrong arguments " << i;
             Napi::TypeError::New(env, ss.str()).ThrowAsJavaScriptException();
             return env.Null();
+
         }
     }
 
