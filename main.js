@@ -40,7 +40,7 @@ function createWindow () {
         setTimeout(function () {
             mainWindow.setSize(info.width, info.height, false);
             mainWindow.setPosition(info.left, info.top, false);
-            console.log("Docking: %s, {%d, %d, %d, %d}", info.side, info.left, info.top, info.width, info.height);
+            console.log("[%s] Docking: %s, {%d, %d, %d, %d}", evt, info.side, info.left, info.top, info.width, info.height);
         }, 1000);
     }
 
