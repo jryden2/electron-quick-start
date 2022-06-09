@@ -1,0 +1,74 @@
+{
+  "_args": [
+    [
+      "electron-application-desktop-toolbar@1.2.2",
+      "C:\\MyProjects\\Ctalk\\electronapp"
+    ]
+  ],
+  "_from": "electron-application-desktop-toolbar@1.2.2",
+  "_id": "electron-application-desktop-toolbar@1.2.2",
+  "_inBundle": false,
+  "_integrity": "sha512-DKVPhfekBfdPNjgyr5s9dj9KtMYvYI8vNNzgJWnqmUbKCaVYmrKkmaHQI/+K8wzRsADlyZPD/UeFftDE8pS/HQ==",
+  "_location": "/electron-application-desktop-toolbar",
+  "_phantomChildren": {},
+  "_requested": {
+    "type": "version",
+    "registry": true,
+    "raw": "electron-application-desktop-toolbar@1.2.2",
+    "name": "electron-application-desktop-toolbar",
+    "escapedName": "electron-application-desktop-toolbar",
+    "rawSpec": "1.2.2",
+    "saveSpec": null,
+    "fetchSpec": "1.2.2"
+  },
+  "_requiredBy": [
+    "/"
+  ],
+  "_resolved": "https://registry.npmjs.org/electron-application-desktop-toolbar/-/electron-application-desktop-toolbar-1.2.2.tgz",
+  "_spec": "1.2.2",
+  "_where": "C:\\MyProjects\\Ctalk\\electronapp",
+  "author": {
+    "name": "Alexander Heinrich",
+    "email": "alexander.heinrich@bizzcalc.de"
+  },
+  "dependencies": {
+    "bindings": "~1.2.1",
+    "node-addon-api": "^1.7.2",
+    "node-gyp-build": "^4.3.0",
+    "prebuild-install": "^7.0.0"
+  },
+  "description": "Uses windows application desktop toolbar to dock electron window.",
+  "devDependencies": {
+    "@types/node": "^14.14.35",
+    "node-gyp": "^8.4.1",
+    "prebuild": "^11.0.0"
+  },
+  "engines": {
+    "node": ">=12"
+  },
+  "files": [
+    "lib",
+    "src",
+    "types",
+    "binding.gyp"
+  ],
+  "gypfile": true,
+  "keywords": [
+    "electron",
+    "toolbar",
+    "dock",
+    "windows",
+    "window",
+    "side"
+  ],
+  "license": "MIT",
+  "main": "lib/index.js",
+  "name": "electron-application-desktop-toolbar",
+  "scripts": {
+    "build-debug": "node-gyp rebuild --debug",
+    "build-release": "node-gyp rebuild --release",
+    "install": "prebuild-install || npm run build-release"
+  },
+  "types": "types/index.d.ts",
+  "version": "1.2.2"
+}

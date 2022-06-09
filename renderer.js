@@ -9,6 +9,9 @@ const electron = require('electron')
 const ipc = electron.ipcRenderer
 
 document.getElementById('close').addEventListener('click', _ => {
-    console.log('closing renderer')
-    ipc.send('closing')
+    ipc.send('close')
+})
+
+document.getElementById('move').addEventListener('click', _ => {
+    ipc.send('move')
 })
